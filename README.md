@@ -395,8 +395,23 @@ smc_data_hub:
       threads: 1
 ```
 
+## Argo Workflows（Kubernetes）
+
+ローカルKubernetesでArgo Workflowsを使ってdbtを実行するサンプルも含まれています。
+
+```bash
+# セットアップ
+cd argo-workflows
+./scripts/setup-local-k8s.sh
+
+# ワークフロー実行
+argo submit -n argo templates/dbt-workflow.yaml --watch
+```
+
+詳細は [argo-workflows/README.md](./argo-workflows/README.md) を参照。
+
 ## 関連ドキュメント
 
-- [dev_raw検証開発フロー設計書](../../docs/dev_raw_workflow.md)
-- [BigQuery版サンプル](../dev_raw_workflow/)
+- [Argo Workflowsサンプル](./argo-workflows/)
 - [dbt Documentation](https://docs.getdbt.com/)
+- [Argo Workflows Documentation](https://argo-workflows.readthedocs.io/)

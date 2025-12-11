@@ -1,0 +1,86 @@
+# 定期実行用CronWorkflow
+# 毎日朝9時（JST）に実行
+apiVersion: argoproj.io/v1alpha1
+kind: CronWorkflow
+metadata:
+  name: dbt-daily-build
+  labels:
+    app: dbt
+    schedule: daily
+spec:
+  # 毎日0時UTC（9時JST）に実行
+  schedule: "0 0 * * *"
+  timezone: "Asia/Tokyo"
+  concurrencyPolicy: "Replace"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+
+  workflowSpec:
+    entrypoint: dbt-daily
+
+    arguments:
+      parameters:
+        - name: dbt-target
+          value: "dev"
+
+    templates:
+      - name: dbt-daily
+        dag:
+          tasks:
+            - name: seed
+              template: dbt-step
+              arguments:
+                parameters:
+                  - name: command
+                    value: "dbt seed --target {{workflow.parameters.dbt-target}}"
+
+            - name: build
+              template: dbt-step
+              dependencies: [seed]
+              arguments:
+                parameters:
+                  - name: command
+                    value: "dbt build --target {{workflow.parameters.dbt-target}}"
+
+            - name: notify-success
+              template: notify
+              dependencies: [build]
+              arguments:
+                parameters:
+                  - name: message
+                    value: "dbt daily build completed successfully!"
+
+      - name: dbt-step
+        inputs:
+          parameters:
+            - name: command
+        container:
+          image: dbt-duckdb:local
+          imagePullPolicy: Never
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              dbt deps
+              {{inputs.parameters.command}}
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+
+      - name: notify
+        inputs:
+          parameters:
+            - name: message
+        container:
+          image: alpine:latest
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              echo "========================================"
+              echo "Notification: {{inputs.parameters.message}}"
+              echo "Timestamp: $(date)"
+              echo "========================================"
+              # 本番では Slack/Teams webhook などを呼び出す
+              # curl -X POST -H 'Content-type: application/json' \
+              #   --data '{"text":"{{inputs.parameters.message}}"}' \
+              #   $SLACK_WEBHOOK_URL

@@ -1,0 +1,56 @@
+# シンプルなdbt実行ワークフロー
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: dbt-run-
+  labels:
+    app: dbt
+spec:
+  entrypoint: dbt-build
+
+  # パラメータ（オーバーライド可能）
+  arguments:
+    parameters:
+      - name: dbt-command
+        value: "dbt build --target dev"
+      - name: dbt-target
+        value: "dev"
+
+  templates:
+    - name: dbt-build
+      inputs:
+        parameters:
+          - name: dbt-command
+          - name: dbt-target
+      container:
+        image: dbt-duckdb:local
+        imagePullPolicy: Never  # ローカルイメージを使用
+        command: ["/bin/bash", "-c"]
+        args:
+          - |
+            echo "=== dbt Environment ==="
+            echo "Target: {{inputs.parameters.dbt-target}}"
+            echo "Command: {{inputs.parameters.dbt-command}}"
+            echo ""
+
+            # dbt deps
+            echo "=== Running dbt deps ==="
+            dbt deps
+
+            # dbt seed
+            echo "=== Running dbt seed ==="
+            dbt seed --target {{inputs.parameters.dbt-target}}
+
+            # Main command
+            echo "=== Running: {{inputs.parameters.dbt-command}} ==="
+            {{inputs.parameters.dbt-command}}
+
+            echo ""
+            echo "=== Workflow completed ==="
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"

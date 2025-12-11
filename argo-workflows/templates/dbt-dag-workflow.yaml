@@ -1,0 +1,106 @@
+# DAG形式のdbtワークフロー
+# seed → staging → marts → test の順で実行
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: dbt-dag-
+  labels:
+    app: dbt
+    workflow-type: dag
+spec:
+  entrypoint: dbt-pipeline
+
+  arguments:
+    parameters:
+      - name: dbt-target
+        value: "dev"
+
+  templates:
+    # メインDAG
+    - name: dbt-pipeline
+      dag:
+        tasks:
+          - name: seed
+            template: dbt-command
+            arguments:
+              parameters:
+                - name: step-name
+                  value: "seed"
+                - name: command
+                  value: "dbt seed --target {{workflow.parameters.dbt-target}}"
+
+          - name: staging
+            template: dbt-command
+            dependencies: [seed]
+            arguments:
+              parameters:
+                - name: step-name
+                  value: "staging"
+                - name: command
+                  value: "dbt run --target {{workflow.parameters.dbt-target}} --select staging"
+
+          - name: marts
+            template: dbt-command
+            dependencies: [staging]
+            arguments:
+              parameters:
+                - name: step-name
+                  value: "marts"
+                - name: command
+                  value: "dbt run --target {{workflow.parameters.dbt-target}} --select marts"
+
+          - name: test
+            template: dbt-command
+            dependencies: [marts]
+            arguments:
+              parameters:
+                - name: step-name
+                  value: "test"
+                - name: command
+                  value: "dbt test --target {{workflow.parameters.dbt-target}}"
+
+          - name: docs
+            template: dbt-command
+            dependencies: [test]
+            arguments:
+              parameters:
+                - name: step-name
+                  value: "docs"
+                - name: command
+                  value: "dbt docs generate --target {{workflow.parameters.dbt-target}}"
+
+    # 共通のdbtコマンド実行テンプレート
+    - name: dbt-command
+      inputs:
+        parameters:
+          - name: step-name
+          - name: command
+      container:
+        image: dbt-duckdb:local
+        imagePullPolicy: Never
+        command: ["/bin/bash", "-c"]
+        args:
+          - |
+            echo "========================================"
+            echo "Step: {{inputs.parameters.step-name}}"
+            echo "========================================"
+
+            # dbt deps (初回のみ必要)
+            if [ "{{inputs.parameters.step-name}}" = "seed" ]; then
+              echo "Running dbt deps..."
+              dbt deps
+            fi
+
+            # メインコマンド実行
+            echo "Running: {{inputs.parameters.command}}"
+            {{inputs.parameters.command}}
+
+            echo ""
+            echo "Step {{inputs.parameters.step-name}} completed!"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
