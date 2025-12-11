@@ -45,12 +45,12 @@ BigQueryのprd/dev環境切り替えフローをDuckDBでローカル完結で�
 ### 1. 環境準備
 
 ```bash
-# プロジェクトルートから依存関係をインストール（初回のみ）
-cd /path/to/dbt_development_analysis
-uv sync
+# リポジトリをクローン
+git clone https://github.com/yk-afk221/dbt-local-workflow.git
+cd dbt-local-workflow
 
-# このディレクトリに移動
-cd samples/local_env_workflow
+# 依存関係をインストール（uv使用）
+uv sync
 
 # ローカル環境のセットアップ（dev_raw/prd_rawスキーマ作成）
 uv run python scripts/setup_local_env.py
@@ -93,8 +93,10 @@ uv run dbt run-operation drop_schema --args '{"schema_name": "ci_12345"}' --targ
 ## ディレクトリ構成
 
 ```
-samples/local_env_workflow/
+dbt-local-workflow/
 ├── README.md                      # このファイル
+├── pyproject.toml                 # 依存関係定義（uv管理）
+├── uv.lock                        # ロックファイル
 ├── dbt_project.yml                # dbtプロジェクト設定
 ├── profiles.yml                   # 接続設定（dev/ci/prd）
 ├── sample.duckdb                  # DuckDBファイル（自動生成）

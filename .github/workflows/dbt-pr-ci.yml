@@ -47,43 +47,44 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Python環境のセットアップ
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      # 2. uvのセットアップ
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
+          version: "latest"
 
-      # 3. 依存関係のインストール
+      # 3. Python環境のセットアップ
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      # 4. 依存関係のインストール
       - name: Install dependencies
-        run: |
-          pip install --upgrade pip
-          pip install dbt-core dbt-duckdb duckdb
+        run: uv sync --no-dev
 
-      # 4. ローカル環境のセットアップ（dev_raw/prd_rawスキーマ作成）
+      # 5. ローカル環境のセットアップ（dev_raw/prd_rawスキーマ作成）
       - name: Setup local environment
         run: |
-          python scripts/setup_local_env.py
-          python scripts/setup_local_env.py info
+          uv run python scripts/setup_local_env.py
+          uv run python scripts/setup_local_env.py info
 
-      # 5. dbt deps（パッケージのインストール）
+      # 6. dbt deps（パッケージのインストール）
       - name: dbt deps
-        run: dbt deps
+        run: uv run dbt deps
 
-      # 6. dbt seed（seedsデータのロード）
+      # 7. dbt seed（seedsデータのロード）
       - name: dbt seed
-        run: dbt seed --target ci
+        run: uv run dbt seed --target ci
 
-      # 7. dbt build（モデルのビルド＆テスト）
+      # 8. dbt build（モデルのビルド＆テスト）
       #    ciターゲットを使用 → dev_rawを参照
       - name: dbt build (dev_raw)
-        run: |
-          dbt build --target ci --full-refresh
+        run: uv run dbt build --target ci --full-refresh
 
-      # 8. dbt docs generate（ドキュメント生成）
+      # 9. dbt docs generate（ドキュメント生成）
       - name: dbt docs generate
-        run: dbt docs generate --target ci
+        run: uv run dbt docs generate --target ci
 
-      # 9. 結果の表示
+      # 10. 結果の表示
       - name: Show build results
         run: |
           echo "=== Build completed successfully ==="
@@ -92,7 +93,7 @@ jobs:
           echo "Output schema: ci_${{ github.run_id }}"
           echo ""
           echo "=== Tables created ==="
-          python -c "
+          uv run python -c "
           import duckdb
           con = duckdb.connect('sample.duckdb')
           schemas = con.execute(\"\"\"
@@ -106,11 +107,11 @@ jobs:
           con.close()
           "
 
-      # 10. CIスキーマの削除
+      # 11. CIスキーマの削除
       - name: Drop CI schema
         if: always()
         run: |
-          dbt run-operation drop_schema --args '{"schema_name": "ci_${{ github.run_id }}"}' --target ci || true
+          uv run dbt run-operation drop_schema --args '{"schema_name": "ci_${{ github.run_id }}"}' --target ci || true
 
       # 11. アーティファクトのアップロード（オプション）
       - name: Upload dbt artifacts

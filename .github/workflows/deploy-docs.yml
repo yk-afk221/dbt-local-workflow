@@ -25,30 +25,31 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
+          version: "latest"
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
 
       - name: Install dependencies
-        run: |
-          pip install --upgrade pip
-          pip install dbt-core dbt-duckdb duckdb
+        run: uv sync --no-dev
 
       - name: Setup local environment
-        run: python scripts/setup_local_env.py
+        run: uv run python scripts/setup_local_env.py
 
       - name: dbt deps
-        run: dbt deps
+        run: uv run dbt deps
 
       - name: dbt seed
-        run: dbt seed --target dev
+        run: uv run dbt seed --target dev
 
       - name: dbt run
-        run: dbt run --target dev
+        run: uv run dbt run --target dev
 
       - name: dbt docs generate
-        run: dbt docs generate --target dev
+        run: uv run dbt docs generate --target dev
 
       - name: Setup Pages
         uses: actions/configure-pages@v4

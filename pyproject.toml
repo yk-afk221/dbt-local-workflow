@@ -1,0 +1,21 @@
+[project]
+name = "dbt-local-workflow"
+version = "0.1.0"
+description = "DuckDB-based dbt workflow sample with prd/dev environment switching"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "dbt-core>=1.8.0",
+    "dbt-duckdb>=1.8.0",
+    "duckdb>=1.0.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "ruff>=0.4.0",
+]
+
+[tool.uv]
+# No package to build - this is a dbt project
+package = false

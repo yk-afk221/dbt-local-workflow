@@ -3,11 +3,14 @@ FROM python:3.11-slim
 
 WORKDIR /dbt
 
-# Install dbt and DuckDB
-RUN pip install --no-cache-dir \
-    dbt-core \
-    dbt-duckdb \
-    duckdb
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+# Copy dependency files first (for better caching)
+COPY pyproject.toml .
+
+# Install dependencies with uv
+RUN uv sync --no-dev --frozen 2>/dev/null || uv pip install --system dbt-core dbt-duckdb duckdb
 
 # Copy dbt project files
 COPY dbt_project.yml .
