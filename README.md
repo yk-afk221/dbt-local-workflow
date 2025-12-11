@@ -1,5 +1,7 @@
 # ローカル環境ワークフロー サンプル（DuckDB完結型）
 
+> **Note**: このリポジトリは [dbt_development_analysis/docs](https://github.com/yk-afk221/dbt_development_analysis) の設計ドキュメントを検証するための実装サンプルです。
+
 BigQueryのprd/dev環境切り替えフローをDuckDBでローカル完結で模倣するサンプルです。
 本番BigQueryに接続せずに、開発フローの学習・検証ができます。
 
