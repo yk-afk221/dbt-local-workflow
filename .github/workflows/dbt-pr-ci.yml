@@ -16,7 +16,9 @@ name: dbt PR CI (DuckDB)
 on:
   pull_request:
     paths:
-      - 'samples/local_env_workflow/**'
+      - '**/*.sql'
+      - '**/*.yml'
+      - '**/*.csv'
       - '.github/workflows/dbt-pr-ci.yml'
 
   # 手動実行も可能
@@ -29,7 +31,7 @@ on:
 
 env:
   PYTHON_VERSION: '3.11'
-  WORKING_DIR: 'samples/local_env_workflow'
+  WORKING_DIR: '.'
 
 jobs:
   dbt-ci:
