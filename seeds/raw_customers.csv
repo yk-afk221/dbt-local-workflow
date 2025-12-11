@@ -1,0 +1,6 @@
+customer_id,customer_name,email,created_at,updated_at
+1,田中太郎,tanaka@example.com,2024-01-01,2024-01-01
+2,佐藤花子,sato@example.com,2024-01-15,2024-01-15
+3,鈴木一郎,suzuki@example.com,2024-02-01,2024-02-01
+4,高橋美咲,takahashi@example.com,2024-02-15,2024-02-15
+5,伊藤健太,ito@example.com,2024-03-01,2024-03-01

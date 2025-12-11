@@ -1,0 +1,54 @@
+version: 2
+
+models:
+  - name: mrt_customer_orders
+    description: |
+      顧客別の注文サマリー。
+      顧客ごとの総注文数、総金額、初回/最終注文日を集計。
+    columns:
+      - name: customer_id
+        description: 顧客ID（主キー）
+        data_tests:
+          - unique
+          - not_null
+
+      - name: customer_name
+        description: 顧客名
+
+      - name: email
+        description: メールアドレス
+
+      - name: total_orders
+        description: 総注文数
+
+      - name: total_amount
+        description: 総注文金額
+
+      - name: first_order_date
+        description: 初回注文日
+
+      - name: last_order_date
+        description: 最終注文日
+
+  - name: mrt_daily_orders
+    description: |
+      日別の注文サマリー。
+      日ごとの注文数、総金額、平均金額、ユニーク顧客数を集計。
+    columns:
+      - name: order_date
+        description: 注文日（主キー）
+        data_tests:
+          - unique
+          - not_null
+
+      - name: order_count
+        description: 注文数
+
+      - name: total_amount
+        description: 総注文金額
+
+      - name: avg_amount
+        description: 平均注文金額
+
+      - name: unique_customers
+        description: ユニーク顧客数

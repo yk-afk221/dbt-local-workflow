@@ -1,0 +1,39 @@
+name: 'local_env_workflow_sample'
+version: '1.0.0'
+config-version: 2
+
+profile: 'local_env_workflow'
+
+# These configurations specify where dbt should look for different types of files.
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+# Model-level configurations
+models:
+  local_env_workflow_sample:
+    +materialized: view
+    staging:
+      +materialized: view
+      +schema: staging
+    marts:
+      +materialized: table
+      +schema: marts
+
+# Seed configurations
+seeds:
+  local_env_workflow_sample:
+    +schema: raw
+
+# Variables
+vars:
+  # For date-based filtering in BigQuery-style queries
+  run_date: '2025-01-01'
+  is_run_command: false

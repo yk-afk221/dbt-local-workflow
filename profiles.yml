@@ -1,0 +1,59 @@
+# profiles.yml
+# DuckDB完結型のローカル開発サンプル
+#
+# ターゲット別の挙動:
+#   - dev: dev_rawスキーマを参照、dev_sandboxに出力（ローカル開発用）
+#   - prd: prd_rawスキーマを参照、本番スキーマに出力（本番想定）
+#   - ci: dev_rawスキーマを参照、ci_{run_id}に出力（PR CI用）
+#
+# 実際のBigQuery環境では:
+#   - dev/ci: ss-analytics-data-hub.dev_raw を参照
+#   - prd: ss-analytics-data-hub.prd_raw を参照
+#
+# このサンプルではDuckDBで同様の構成を模倣しています。
+
+local_env_workflow:
+  target: dev  # デフォルトターゲット
+
+  outputs:
+    # ===========================================
+    # 開発環境（dev_rawを参照）
+    # ===========================================
+
+    # ローカル開発用
+    dev:
+      type: duckdb
+      path: 'sample.duckdb'
+      schema: dev_sandbox
+      threads: 1
+      # 備考: sources.ymlのschema設定により、dev_rawを参照
+
+    # PR CI用（一時スキーマ使用）
+    ci:
+      type: duckdb
+      path: 'sample.duckdb'
+      # GitHub Actions では GITHUB_RUN_ID が設定される
+      # ローカルでは 'local_test' がデフォルト
+      schema: "ci_{{ env_var('GITHUB_RUN_ID', 'local_test') }}"
+      threads: 4
+      # 備考: sources.ymlのschema設定により、dev_rawを参照
+      # CI完了後にdrop_schemaマクロでスキーマを削除
+
+    # ===========================================
+    # 本番環境（prd_rawを参照）
+    # ===========================================
+
+    # 本番staging
+    prd:
+      type: duckdb
+      path: 'sample.duckdb'
+      schema: prd_staging
+      threads: 4
+      # 備考: sources.ymlのschema設定により、prd_rawを参照
+
+    # 本番marts
+    prd_marts:
+      type: duckdb
+      path: 'sample.duckdb'
+      schema: prd_marts
+      threads: 4

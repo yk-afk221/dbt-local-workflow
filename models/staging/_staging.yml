@@ -1,0 +1,56 @@
+version: 2
+
+models:
+  - name: stg_customers
+    description: |
+      顧客データのステージングモデル。
+      RAW層のcustomersテーブルをクレンジング・標準化。
+    columns:
+      - name: customer_id
+        description: 顧客ID（主キー）
+        data_tests:
+          - unique
+          - not_null
+
+      - name: customer_name
+        description: 顧客名
+
+      - name: email
+        description: メールアドレス
+
+      - name: created_at
+        description: 作成日時
+
+      - name: updated_at
+        description: 更新日時
+
+  - name: stg_orders
+    description: |
+      注文データのステージングモデル。
+      RAW層のordersテーブルをクレンジング・標準化。
+    columns:
+      - name: order_id
+        description: 注文ID（主キー）
+        data_tests:
+          - unique
+          - not_null
+
+      - name: customer_id
+        description: 顧客ID（外部キー）
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_customers')
+              field: customer_id
+
+      - name: order_date
+        description: 注文日
+
+      - name: amount
+        description: 注文金額
+
+      - name: status
+        description: 注文ステータス
+        data_tests:
+          - accepted_values:
+              values: ['pending', 'completed', 'cancelled', 'shipped']
