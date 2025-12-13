@@ -11,7 +11,33 @@ DuckDB + dbt ワークフローをArgo Workflowsでローカル実行するサ�
 
 ## クイックスタート
 
-### 1. 共有Kubernetesクラスタの使用
+### Makefileを使用（推奨）
+
+```bash
+cd argo-workflows
+
+# 全セットアップを一括実行
+make setup
+
+# Argo UIを起動
+make ui
+
+# ワークフローを実行
+make submit-simple    # シンプルなdbt実行
+make submit-dag       # DAG形式（staging→marts）
+```
+
+利用可能なコマンド一覧:
+```bash
+make help
+```
+
+### 手動セットアップ
+
+<details>
+<summary>クリックして展開</summary>
+
+#### 1. 共有Kubernetesクラスタの使用
 
 このプロジェクトは `kubernetes_test` リポジトリと同じkindクラスタ（`kind`）を共有します。
 
@@ -29,13 +55,13 @@ kubectl get pods -n argo
 
 > **Note**: クラスタが存在しない場合は、`kubernetes_test` リポジトリのREADMEを参照してセットアップしてください。
 
-### 2. Argo CLIのインストール（未インストールの場合）
+#### 2. Argo CLIのインストール（未インストールの場合）
 
 ```bash
 brew install argo
 ```
 
-### 3. Argo UI へのアクセス
+#### 3. Argo UI へのアクセス
 
 ```bash
 # ポートフォワード
@@ -45,7 +71,7 @@ kubectl -n argo port-forward deployment/argo-server 2746:2746 &
 open https://localhost:2746
 ```
 
-### 3. dbt Dockerイメージのビルド
+#### 4. dbt Dockerイメージのビルド
 
 ```bash
 cd argo-workflows
@@ -57,7 +83,7 @@ docker build -t dbt-duckdb:local -f Dockerfile ..
 kind load docker-image dbt-duckdb:local --name kind
 ```
 
-### 4. ワークフローの実行
+#### 5. ワークフローの実行
 
 ```bash
 # シンプルなdbt runワークフロー
@@ -72,19 +98,36 @@ argo submit -n argo templates/dbt-workflow.yaml \
   --watch
 ```
 
+</details>
+
 ## ディレクトリ構成
 
 ```
 argo-workflows/
 ├── README.md                    # このファイル
+├── Makefile                     # セットアップ・実行コマンド
 ├── Dockerfile                   # dbt + DuckDB イメージ
-├── templates/
-│   ├── dbt-workflow.yaml        # シンプルなdbt実行
-│   ├── dbt-dag-workflow.yaml    # DAG形式（staging→marts）
-│   └── dbt-cron-workflow.yaml   # 定期実行（CronWorkflow）
-└── scripts/
-    └── setup-local-k8s.sh       # セットアップスクリプト
+└── templates/
+    ├── dbt-workflow.yaml        # シンプルなdbt実行
+    ├── dbt-dag-workflow.yaml    # DAG形式（staging→marts）
+    └── dbt-cron-workflow.yaml   # 定期実行（CronWorkflow）
 ```
+
+## Makefileターゲット一覧
+
+| ターゲット | 説明 |
+|-----------|------|
+| `make setup` | 全セットアップを実行（クラスタ確認→Argo設定→ビルド→ロード） |
+| `make check-cluster` | 共有Kubernetesクラスタの確認 |
+| `make set-context` | kubectlコンテキストを設定 |
+| `make install-argo` | Argo Workflowsをインストール |
+| `make check-argo-cli` | Argo CLIの確認・インストール |
+| `make build` | dbt Dockerイメージをビルド |
+| `make load` | イメージをkindクラスタにロード |
+| `make ui` | Argo UIをポートフォワードで起動 |
+| `make submit-simple` | シンプルなdbtワークフローを実行 |
+| `make submit-dag` | DAGワークフローを実行 |
+| `make clean` | 全ワークフローを削除 |
 
 ## ワークフローテンプレート
 
