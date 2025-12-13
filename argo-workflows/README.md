@@ -7,35 +7,31 @@ DuckDB + dbt ワークフローをArgo Workflowsでローカル実行するサ�
 - Docker Desktop
 - kubectl
 - Homebrew (macOS)
+- **kubernetes_test リポジトリのkindクラスタ（共有）**
 
 ## クイックスタート
 
-### 1. ローカルKubernetesのセットアップ
+### 1. 共有Kubernetesクラスタの使用
+
+このプロジェクトは `kubernetes_test` リポジトリと同じkindクラスタ（`kind`）を共有します。
 
 ```bash
-# kindのインストール（軽量なローカルK8s）
-brew install kind
+# クラスタが起動しているか確認
+kind get clusters
+# 出力に "kind" が含まれていればOK
 
-# クラスタ作成
-kind create cluster --name argo-local
+# コンテキストを切り替え
+kubectl config use-context kind-kind
 
-# コンテキスト確認
-kubectl cluster-info --context kind-argo-local
+# Argo Workflowsが動作しているか確認
+kubectl get pods -n argo
 ```
 
-### 2. Argo Workflowsのインストール
+> **Note**: クラスタが存在しない場合は、`kubernetes_test` リポジトリのREADMEを参照してセットアップしてください。
+
+### 2. Argo CLIのインストール（未インストールの場合）
 
 ```bash
-# Argo Workflows namespaceを作成
-kubectl create namespace argo
-
-# Argo Workflowsをインストール（クイックスタート版）
-kubectl apply -n argo -f https://github.com/argoproj/argo-workflows/releases/download/v3.5.11/quick-start-minimal.yaml
-
-# Podが起動するまで待機
-kubectl wait --for=condition=Ready pods --all -n argo --timeout=300s
-
-# Argo CLIのインストール
 brew install argo
 ```
 
@@ -49,7 +45,7 @@ kubectl -n argo port-forward deployment/argo-server 2746:2746 &
 open https://localhost:2746
 ```
 
-### 4. dbt Dockerイメージのビルド
+### 3. dbt Dockerイメージのビルド
 
 ```bash
 cd argo-workflows
@@ -57,11 +53,11 @@ cd argo-workflows
 # ローカルでイメージをビルド
 docker build -t dbt-duckdb:local -f Dockerfile ..
 
-# kindクラスタにイメージをロード
-kind load docker-image dbt-duckdb:local --name argo-local
+# kindクラスタにイメージをロード（共有クラスタ）
+kind load docker-image dbt-duckdb:local --name kind
 ```
 
-### 5. ワークフローの実行
+### 4. ワークフローの実行
 
 ```bash
 # シンプルなdbt runワークフロー
@@ -139,11 +135,13 @@ argo delete -n argo --all
 ### クラスタ管理
 
 ```bash
-# クラスタ停止
-kind delete cluster --name argo-local
+# ⚠️ 共有クラスタのため、削除時は注意してください
+# kubernetes_test のワークフローにも影響します
 
-# クラスタ再作成
-kind create cluster --name argo-local
+# クラスタ停止（kubernetes_testと共有）
+kind delete cluster --name kind
+
+# クラスタ再作成はkubernetes_testのREADMEを参照
 ```
 
 ## トラブルシューティング
@@ -151,8 +149,8 @@ kind create cluster --name argo-local
 ### イメージが見つからない
 
 ```bash
-# kindにイメージをロードし直す
-kind load docker-image dbt-duckdb:local --name argo-local
+# kindにイメージをロードし直す（共有クラスタ）
+kind load docker-image dbt-duckdb:local --name kind
 ```
 
 ### Podがpendingのまま
